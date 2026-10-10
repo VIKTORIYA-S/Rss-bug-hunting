@@ -134,7 +134,7 @@ function renderProducts() {
     const btn = document.createElement("button");
     btn.textContent = "В корзину";
     // добавляем обработчик события на кнопку, чтобы при клике добавлять товар в корзину
-    btn.addEventListener("click", addToCart());
+    btn.addEventListener("click",  () => addToCart(p.id));
     card.appendChild(btn);
     productsEl.appendChild(card);
   });
@@ -142,27 +142,35 @@ function renderProducts() {
 
 function addToCart(id) {
   const product = products.find((p) => p.id === id);
+  const item = cart.find((i) => i.id === id);
   if (!product) {
     return;
+  } else if (item) {
+    item.qty++;
+  } else {
+    cart.push({
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      qty: 1,
+    });
   }
-  cart.push({
-    id: product.id,
-    name: product.name,
-    price: product.price,
-    qty: 1,
-  });
   renderCart();
 }
 
 function increaseQty(id) {
   const item = cart.find((i) => i.id === id);
-  item.qty;
+  item.qty++;
   renderCart();
 }
 
 function decreaseQty(id) {
   const item = cart.find((i) => i.id === id);
-  item.qty--;
+  if (item.qty === 1) {
+    return;
+  } else {
+    item.qty--;
+  }
   renderCart();
 }
 
@@ -172,22 +180,28 @@ function removeItem(id) {
 }
 
 function applyPromo() {
-  if ((promoInput.value = "SALE10")) {
+  if (promoInput.value === "SALE10") {
     discount = 0.1;
+  } else {
+    discount = 0;
   }
   renderCart();
 }
 
 function clearCart() {
-  cart.splice(0, 1);
+  cart.splice(0, cart.length);
+  promoInput.value = "";
+  discount = 0;
   renderCart();
 }
 
 function renderCart() {
   cartItemsEl.innerHTML = "";
-  let total = "";
+  let total = 0;
+  let badgeTotal = 0;
   cart.forEach((item) => {
-    const lineTotal = item.price;
+    const lineTotal = item.price * item.qty;
+    badgeTotal += item.qty;
     const li = document.createElement("li");
     li.className = "cart-item";
     li.innerHTML = `<span>${item.name}</span>
@@ -206,16 +220,22 @@ function renderCart() {
       removeItem(item.id),
     );
     cartItemsEl.appendChild(li);
-    total += item.price * item.qty;
+    total += lineTotal;
   });
 
   if (discount) {
     total = total - total * discount;
   }
 
-  badgeEl.textContent = cart.length;
+
+  badgeEl.textContent = badgeTotal;
   totalEl.textContent = total;
-  emptyMsg.hidden = true;
+
+  if (cart.length === 0) {
+    emptyMsg.hidden = false;
+  } else {
+    emptyMsg.hidden = true;
+  }
 }
 
 promoBtn.addEventListener("click", applyPromo);
