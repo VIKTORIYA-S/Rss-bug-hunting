@@ -13,6 +13,10 @@ let nextId = 1;
 function addTask() {
   const text = input.value;
   errorEl.hidden = true;
+  if (text.trim() === "") {
+    errorEl.hidden = false;
+    return;
+  }
   tasks.push({ id: nextId++, text: text, done: false });
   input.value = "";
   render();
@@ -20,31 +24,41 @@ function addTask() {
 
 function toggleTask(id) {
   const task = tasks.find((t) => t.id === id);
-  task.done = true;
+  task.done = !task.done;
   render();
 }
 
 function deleteTask(id) {
-  tasks.filter((t) => t.id !== id);
+  tasks = tasks.filter((t) => t.id !== id);
   render();
 }
 
 function clearCompleted() {
-  tasks = [];
+  tasks = tasks.filter((t) => t.done === false);
   render();
 }
 
 function getVisibleTasks() {
-  return tasks;
+   if (currentFilter === "all") {
+     return tasks;
+   } else if (currentFilter === "active") {
+     return tasks.filter((t) => t.done === false);
+   } else if (currentFilter === "done") {
+     return tasks.filter((t) => t.done === true);
+   } else {
+     return tasks;
+  }
 }
 
 function updateCounter() {
-  counter.textContent = "Активных задач: " + tasks.length;
+  const active = tasks.filter((t) => t.done === false);
+  counter.textContent = "Активных задач: " + active.length;
 }
 
 function render() {
+  list.innerHTML = "";
   const visible = getVisibleTasks();
-  for (let i = 1; i <= visible.length; i++) {
+  for (let i = 0; i < visible.length; i++) {
     const task = visible[i];
     const li = document.createElement("li");
     li.className = "task";
@@ -60,7 +74,9 @@ function render() {
     const del = document.createElement("button");
     del.className = "task__del";
     del.textContent = "✕";
-    del.addEventListener("click", () => deleteTask(task.id));
+    del.addEventListener("click", () => {
+      deleteTask(task.id);
+    });
 
     li.appendChild(span);
     li.appendChild(del);
@@ -69,14 +85,16 @@ function render() {
   updateCounter();
 }
 
-addBtn.addEventListener("dblclick", addTask);
+addBtn.addEventListener("click", addTask);
 clearBtn.addEventListener("click", clearCompleted);
 
 filterButtons.forEach((btn) => {
   btn.addEventListener("click", () => {
     filterButtons.forEach((b) => b.classList.remove("active"));
     btn.classList.add("active");
+
     currentFilter = btn.dataset.filter;
+
     render();
   });
 });
